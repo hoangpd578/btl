@@ -1,0 +1,182 @@
+In ra những người có quốc tịch ở một nơi nhưng sống ở nơi khác
+select ?s ?p ?o
+where {
+  ?idx a class:Country;
+         prs:tên_hiển_thị ?p.
+  ?idy a class:Country;
+         prs:tên_hiển_thị ?o.
+  ?idz a class:Person;
+         rel:﻿có_quốc_tịch ?idx;
+         rel:sống_ở ?idy;
+         prs:tên_hiển_thị ?s.
+  filter(?p!=?o)
+}
+***
+In ra tên các chương trình bị một nước tạm hoãn và đã gây thiệt hại lớn cho "Amazon.com"
+select ?s ?lk1 ?p ?lk2 ?o  
+where {
+  ?idz a class:Organization;
+         prs:tên_hiển_thị ?o.
+  ?idy a class:Event;
+         ?lk2 ?idz;
+         prs:tên_hiển_thị ?p.
+  ?idx a class:Country;
+         prs:tên_hiển_thị ?s;
+         ?lk1 ?idy.
+  filter (?o = "Amazon.com" && ?lk1=rel:tạm_hoãn && ?lk2 = rel:gây_thiệt_hải_lớn_cho)
+}
+***
+In ra tên và ngày mất của những người đã đến cả nước "Madagascar" và "Togo", mất sau năm 1990
+select ?s ?p ?o
+where {
+  ?idx a class:Country;
+         prs:tên_hiển_thị "Madagascar".
+  ?idy a class:Country; 
+         prs:tên_hiển_thị "Togo".
+  ?idt a class:Time;
+         prs:tên_hiển_thị ?o.
+  ?idz a class:Person;
+         rel:sống_ở ?idy; 
+         rel:sống_ở ?idx;
+         prs:tên_hiển_thị ?s;
+         ?p ?idt.
+  filter (?p = rel:mất_ngày && regex(?o, "^((199[0..9])|2)") )
+}
+***
+In ra những Event trong tên có từ Vietnam, được tổ chức đầu tiên tại "Australia" và diễn ra vào sau năm 2009
+select ?s ?lk1 ?p ?lk2 ?o
+where {
+  ?id a class:Event;
+     ?lk1 ?idx;
+     ?lk2 ?idy;
+  	 prs:tên_hiển_thị ?s.
+  ?idx a class:Country;
+     prs:tên_hiển_thị ?p .
+  ?idy a class:Time;
+     prs:tên_hiển_thị ?o.
+  filter (regex(?s, "Vietnam") && ?lk1 = rel:được_tổ_chức_đầu_tiên_tại && ?lk2 = rel:diễn_ra_vào && ?p = "Australia" && strstarts(str(?o), "201"))
+}
+***
+In ra tên của 20 nước có GDP cao nhất và GDP của nước đó
+select ?s ?p ?o
+where {
+  ?id rdf:type class:Country.
+  ?id prs:tên_hiển_thị ?s.
+  ?id ?p ?o.
+  filter (?p = prs:GDP)
+}
+ order by desc (?o) 
+ limit 20
+***
+In ra mô tả của nơi tiếp giáp với "Wichita,_United_States", trực thuộc "Tainan,Taiwan", và là nời kết thúc của chùm sự kiện "Vietnam_Medi-Pharm_Expo_(MediPharm_Expo)"
+select ?s ?p ?o 
+where {
+  ?idy rdf:type class:Location;
+       prs:tên_hiển_thị "Wichita,_United_States".
+  ?idz rdf:type class:Location;
+       prs:tên_hiển_thị "Tainan,Taiwan".
+  ?idt rdf:type class:Event;
+       prs:tên_hiển_thị "Vietnam_Medi-Pharm_Expo_(MediPharm_Expo)".
+  ?idx rdf:type class:Location;
+       rel:tiếp_giáp_với ?idy;
+       rel:trực_thuộc ?idz;
+       rel:là_nơi_kết_thúc_của ?idt;
+       prs:tên_hiển_thị ?s;
+       ?p ?o.
+  filter (?p = prs:mô_tả)
+}
+***
+In ra thông tin công ty đầu tiên tìm thấy mà là đối thủ của 2 công ty "Vodafone", "Yahoo!" nhưng không là đối thủ của "United_Nations"
+select ?s ?p ?o
+where {
+  {
+    select ?s where {
+      {
+        ?s a class:Organization;
+             rel:là_đối_thủ_của ?idx;
+             rel:là_đối_thủ_của ?idy.
+ 		?idx a class:Organization;
+             prs:tên_hiển_thị "Vodafone".
+ 	 	?idy a class:Organization;
+             prs:tên_hiển_thị "Yahoo!".
+      }
+      minus 
+      {
+        ?s a class:Organization;
+             rel:là_đối_thủ_của ?idz.
+        ?idz a class:Organization;
+             prs:tên_hiển_thị "United_Nations".
+      }
+    }
+    limit 3
+  }
+  ?s ?p ?o.
+  filter (strstarts(str(?p), "http://btl/properties/"))
+}
+***
+In ra 3 người có tuổi cao nhất cùng với tuổi của họ, yêu quý nước "Falkland_Islands" nhưng lại sống ở location "Nicosia,_Cyprus"
+select ?s ?o
+where {
+  ?id a class:Person;
+        rel:yêu_quý ?idx;
+        rel:sống_ở ?idy;
+        prs:tên_hiển_thị ?s;
+        prs:tuổi ?o.
+  ?idx a class:Country;
+         prs:tên_hiển_thị "Falkland_Islands".
+  ?idy a class:Location;
+         prs:tên_hiển_thị "Nicosia,_Cyprus".
+}
+order by desc (?o)
+limit 3
+***
+In ra tên của những người đã sống ở nhiều hơn 1 quốc gia nhưng lại tham gia ít hơn 3 event
+select ?s ?p ?o
+where {
+  {
+    select ?s
+    where {
+      ?s a class:Person;
+         rel:sống_ở ?idx.
+      ?idx a class:Country.
+    }
+  	group by ?s 
+  	having (count(?idx) > 1)
+  }
+  minus
+  {
+    select ?s
+  	where {
+      ?s a class:Person;
+         rel:tham_gia ?idx.
+      ?idx a class:Event.
+    }
+  	group by ?s 
+  	having (count(?idx) > 3)
+  }
+  ?s ?p ?o.
+  filter ( ?p = prs:tên_hiển_thị )
+}
+***
+In ra 3 nước đầu tiên tìm thấy cùng tham dự 1 sự kiện bất kỳ và cùng hợp tác với "Republic_of_the_Congo", trong đó GDP của nước thứ nhất lớn hơn nước thứ hai nhưng dân số lại nhỏ hơn nước thứ hai
+select ?s ?o
+where {
+  ?idx a class:Country;
+         rel:tham_dự ?k1;
+         rel:hợp_tác_với ?k2;
+         prs:GDP ?gdp1;
+         prs:dân_số ?ds1;
+         prs:tên_hiển_thị ?s.
+  ?idy a class:Country;
+         rel:tham_dự ?k1;
+         rel:hợp_tác_với ?k2;
+         prs:GDP ?gdp2;
+         prs:dân_số ?ds2;
+         prs:tên_hiển_thị ?o.
+  ?k1 a class:Event.
+  ?k2 a class:Country;
+        prs:tên_hiển_thị "Republic_of_the_Congo".
+  filter (?gdp1 > ?gdp2 && ?ds1 < ?ds2)
+  }
+limit 3
+***
